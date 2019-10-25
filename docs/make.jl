@@ -1,6 +1,67 @@
 using Documenter,DiffEqBase,DiffEqPDEBase,DiffEqProblemLibrary,DiffEqBiological
 
-makedocs(modules=[DiffEqBase,DiffEqPDEBase,DiffEqProblemLibrary,DiffEqBiological],
+
+"""
+	pkgdir(m::Module, paths...)
+	pkgdir(pkgname::String, paths...)
+
+Get the absolute path to the directory of an installed package, specified by
+either its name `pkgname` or its root module `m`. Optionally join the result
+with `paths`.
+
+# Returns
+
+Absolute path to package directory if found, `nothing` otherwise.
+"""
+function pkgdir(p::Union{String, Module}, paths...)
+	pdir = p isa String ? Base.locate_package(p) : pathof(p)
+	pdir === nothing && return nothing
+	return joinpath(dirname(dirname(pdir)), paths...)
+end
+
+
+"""
+	joinpages(srcdir::String, pages)
+
+Recursively prepend `srcdir` to all paths in `pages`, where `pages` is the argument to
+`Documenter.makedocs`.
+"""
+
+joinpages(srcdir::String, pages::Array) = [joinpages(srcdir, p) for p in pages]
+joinpages(srcdir::String, path::String) = joinpath(srcdir, path)
+joinpages(srcdir::String, pair::Pair) = pair.first => joinpages(srcdir, pair.second)
+
+
+"""
+	locate_pages(pkg[, srcdir::String], pages)
+
+Locate the documentation source files in `pages` within the directory for
+package `pkg`, where `pages` is the argument to `Documeter.makedocs`.
+`pkg` may be either the name of the package or its root module. `srcdir`
+is the subdirectory containing the package's documentation files and
+defaults to `docs/src/`.
+
+# Returns
+
+Updated version of `pages` where all file paths are absolute. Returns an
+empty array and emits a warning if the package directory could not be
+found. Either result can be passed to `Documenter.makedocs`.
+"""
+function locate_pages(pkg, srcdir::String, pages)
+	abspath = pkgdir(pkg, srcdir)
+@show abspath
+	if abspath === nothing
+		@warn "Unable to find directory for package $pkg"
+		return []
+	end
+	return joinpages(abspath, pages)
+end
+
+locate_pages(pkg, pages) = locate_pages(pkg, "docs/src", pages)
+
+
+
+makedocs(modules=[DiffEqBase,DiffEqProblemLibrary],
          doctest=false, clean=true,
          format = :html,
          assets = ["assets/favicon.ico"],
@@ -87,7 +148,8 @@ makedocs(modules=[DiffEqBase,DiffEqPDEBase,DiffEqProblemLibrary,DiffEqBiological
              "models/external_modeling.md"
          ],
          "APIs" => Any[
-             "apis/diffeqbio.md"
+#             "apis/diffeqbio.md"
+			 "DiffEqBase.jl" => @show(locate_pages(DiffEqBase, DiffEqBase.API_DOC_PAGES)),
          ],
          "Extra Details" => Any[
              "extras/timestepping.md",
