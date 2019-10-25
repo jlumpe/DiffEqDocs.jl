@@ -1,4 +1,4 @@
-using Documenter,DiffEqBase,DiffEqPDEBase,DiffEqProblemLibrary,DiffEqBiological
+using Documenter,DiffEqBase,DiffEqProblemLibrary
 
 
 """
@@ -144,7 +144,7 @@ makedocs(modules=[DiffEqBase,DiffEqProblemLibrary],
              "models/multiscale.md",
              "models/physical.md",
              "models/financial.md",
-             "models/biological.md",
+#             "models/biological.md",
              "models/external_modeling.md"
          ],
          "APIs" => Any[
